@@ -118,14 +118,16 @@ bool Sensor::measure(String &out, char *command, uint32_t expectedLen,
 bool Sensor::_measureR3_4(String &out, char *command, uint32_t timeout) {
   uint32_t offset = out.length();
 
-  if (!measure(out, command, 35, timeout, 1, '\r')) return false;
+  if (!measure(out, command, 35, timeout, 1, '\r'))
+    return false;
 
-  if (out.length() < offset + 2 || out[out.length() - 1] != '0') return false;
+  if (out.length() < offset + 2 || out[out.length() - 1] != '0')
+    return false;
 
   out = out.substring(0, out.length() - 2);
 
   // Convert spaces to tabs
-  for (uint32_t i = 0; i < out.length(); i++) {
+  for (uint32_t i = offset; i < out.length(); i++) {
     if (out[i] == ' ') out[i] = '\t';
   }
 
@@ -133,12 +135,11 @@ bool Sensor::_measureR3_4(String &out, char *command, uint32_t timeout) {
 }
 
 bool Sensor::measureR3(String &out, uint32_t timeout) {
-  bool res = _measureR3_4(out, "aR3!" timeout);
+  bool res = _measureR3_4(out, "aR3!", timeout);
   return res;
 }
 
 bool Sensor::measureR4(String &out, uint32_t timeout) {
-  bool res = _measureR3_4(out, "aR4!" timeout);
+  bool res = _measureR3_4(out, "aR4!", timeout);
   return res;
 }
-

@@ -19,8 +19,8 @@
 // LOGGER_ID: ID (name) of the logger, will be prepended to output file names
 // RTC_INTERRUPT_PIN: Pin for RTC interrupt
 // BUTTON_PIN: Pin for the control button
-// SD_CARD_DETECT_PIN (optional): Pin signalling if the SD card was added /
-// removed SDCARD_PIN: Pin for controlling the SD card (Chip select / CS pin)
+// SD_CARD_DETECT_PIN (optional): Pin signalling if the SD card was inserted/removed
+// SDCARD_PIN: Pin for communicating with the SD reader (chip select / CS pin)
 // LED_PIN: Pin of a diagnostic LED
 // ERROR_LED_PIN: Pin of LED used for emitting error codes
 // SDI12_PIN: The pin of the SDI-12 data bus
@@ -42,38 +42,39 @@
 // 2. User settings
 // --------------------------------------------
 
+// uncomment if messages should be printed and/or date-time should be set
+//#define DEBUG
+
 // Name of the output directory
 #define BASE_DIR "atmos22"
 
 // Defines how many bytes should be logged to RAM before
 // writing to the SD card. Higher numbers will lead to lower
 // energy consumption, but in case of power loss, more data
-// will be lost.
+// will be lost. 
+// Also make sure that there is enough RAM. Memory is reported
+// in debug mode.
 #define BUFFER_SIZE 16384
 
 // Measurement interval, at least 10s if using the R4! command
 // according to ATMOS22 integrator guide
 #define MEASUREMENT_INTERVAL_SECONDS 10
 
+// header added on top of every file
 #define HEADER \
-  "\
-date_time\tnorth_speed\teast_speed\tgust_speed\
-\ttemperature\tx_orientation\ty_orientation\
-\tbattery_voltage\tboard_temperature\n"
+"date_time\tnorth_speed\teast_speed\tgust_speed\ttemperature\t\
+x_orientation\ty_orientation\tbattery_voltage\tboard_temperature\n"
 
-// Blink errors (error LED will blink this many times)
+// Error codes (error LED will blink this many times)
 #define SD_ERROR 3
 #define SENSOR_ERROR 4
 #define CLOCK_ERROR 5
-// interval, at which erros are shown
+// interval, at which erros are indicated
 #define ERROR_INTERVAL_SECS 10
 
 // SD settings
 #define ENABLE_DEDICATED_SPI 1
 #define SDFAT_FILE_TYPE 1
-
-// uncomment if messages should be printed and/or date-time should be set
-//#define DEBUG
 
 // The baud rate for the output serial port
 #define SERIAL_BAUD 9600
@@ -103,16 +104,16 @@ bool debugMode = false;
 // 4. Global variables (occupy RAM from the beginning)
 // --------------------------------------------
 
-// RTC, logger, sensor
+// RTC, SD card, logger, sensor
 RTC_DS3231 rtc;
 SdFat sd;
 SdLogger logger = SdLogger(sd, rtc, LOGGER_ID, BUFFER_SIZE);
 Sensor sensor = Sensor(SDI12_PIN);
 
-// Next wake time, always incremented by wakeInterval
+// Next wake-up time, always incremented by wakeInterval
 uint32_t wakeTime = 0;
 
-// Measurement or error interval
+// Measurement or error reporting interval
 uint32_t wakeInterval = MEASUREMENT_INTERVAL_SECONDS;
 
 // The current state of the logger
@@ -127,15 +128,15 @@ enum state {
 
 volatile state runState = starting;
 
-// must be true for logging to happen
+// must be true for logging to happen (usually set in ISR)
 volatile bool regularWakeup = false;
 
 // SD state
 enum sdState { inserted, missing, unknown };
 
+#ifdef SD_CARD_DETECT_PIN
 // SD card is always present at the start, otherwise
 // there will be an error
-#ifdef SD_CARD_DETECT_PIN
 volatile sdState sdPresence = inserted;
 #else
 volatile sdState sdPresence = unknown;
@@ -301,8 +302,7 @@ void syncClock() {
         F("in the terminal (Unix). Then re-open the serial monitor."));
     // based on
     // https://forum.arduino.cc/index.php?topic=367987.msg2536880#msg2536880
-    while (!Serial.available())
-      ;
+    while (!Serial.available());
     // read timestamp and set time immediately
     unsigned long pctime = Serial.parseInt();
     if (pctime != 0) {
@@ -367,9 +367,8 @@ bool setupSD() {
 }
 
 uint8_t initSD() {
-  // Initialize properly
-  // (see
-  // https://github.com/greiman/SdFat/blob/master/examples/QuickStart/QuickStart.ino)
+  // Initialize properly, see:
+  // https://github.com/greiman/SdFat/blob/master/examples/QuickStart/QuickStart.ino
   if (!sd.begin(SDCARD_PIN)) {
     PRINTLN(F("Card initialization failed!"));
     if (sd.card()->errorCode()) {
@@ -425,7 +424,9 @@ bool formatCard() {
 // --------------------------------------------
 
 // ISR fired by RTC
-static void rtcISR() { regularWakeup = true; }
+static void rtcISR() {
+  regularWakeup = true;
+}
 
 #ifdef SD_CARD_DETECT_PIN
 void sdChange() {
@@ -503,7 +504,7 @@ void loop() {
         if (logger.detach()) {
           PRINTLN("Closing existing file and creating new file took " +
                   String(millis() - _t) + " ms");
-          // Wait 3s to be sure that everything was written.
+          // Wait 3s to be absolutely sure that everything was written.
           // FIXME: is this necessary?
           delay(3000);
           runState = detached_logging;
@@ -572,7 +573,6 @@ void loop() {
     delay(100);
     digitalWrite(LED_PIN, LOW);
   }
-
 
   // Increment next wake time until it lies in the future.
   // We require the wakeup time to be at least 3s in the future,

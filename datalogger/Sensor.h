@@ -13,7 +13,7 @@ class Sensor {
 
   bool _checkActive(char i);
   char _findAddress();
-  bool measureR3_4(String &out, char *command, uint32_t timeout);
+  bool _measureR3_4(String &out, char *command, uint32_t timeout);
 
  public:
   // Initialization with a given sensor address
@@ -42,7 +42,7 @@ class Sensor {
   // Does an instantaneous R4! measurement, without appending
   // sensortype / checksum / CRC.
   // *Do not issue more frequently than every 10s*
-  bool measureR4(String &out, uint32_t timeout = 5000);
+  bool measureR3(String &out, uint32_t timeout = 5000);
 };
 
 #endif
