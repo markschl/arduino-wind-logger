@@ -430,7 +430,7 @@ static void rtcISR() {
 
 #ifdef SD_CARD_DETECT_PIN
 void sdChange() {
-  if (digitalRead(SD_CTRL_PIN)) {
+  if (digitalRead(SD_CARD_DETECT_PIN)) {
     sdPresence = present;
   } else {
     sdPresence = missing;
