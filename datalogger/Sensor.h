@@ -19,7 +19,7 @@ class Sensor {
   // Initialization with a given sensor address
   Sensor(uint8_t dataPin, char sensorAddress = '0');
   // Start SDI-12 (given wait time in ms)
-  char init(uint32_t wait = 500);
+  void init(uint32_t wait = 500);
   // Returns `true` if the sensor is found under the current address
   bool isConnected() { return _checkActive(sensorAddress); }
   // Searches for an active sensor by checking all possible addresses for a

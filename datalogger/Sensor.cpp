@@ -3,7 +3,7 @@
 Sensor::Sensor(uint8_t dataPin, char sensorAddress)
     : sensorAddress(sensorAddress), sdi12(dataPin) {}
 
-char Sensor::init(uint32_t wait) {
+void Sensor::init(uint32_t wait) {
   sdi12.begin();
   delay(wait);  // allow things to settle
 }
@@ -51,6 +51,7 @@ char Sensor::_findAddress() {
     if (_checkActive(i)) {
       return i;
     }
+  return 0;
 }
 
 bool Sensor::measure(String &out, char *command, uint32_t expectedLen,

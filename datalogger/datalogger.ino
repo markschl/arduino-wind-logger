@@ -132,7 +132,7 @@ volatile state runState = starting;
 volatile bool regularWakeup = false;
 
 // SD state
-enum sdState { inserted, missing, unknown };
+enum sdState { present, inserted, missing, unknown };
 
 #ifdef SD_CARD_DETECT_PIN
 // SD card is always present at the start, otherwise
