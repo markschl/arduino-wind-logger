@@ -90,7 +90,7 @@ x_orientation\ty_orientation\tbattery_voltage\tboard_temperature\n"
 #endif
 
 #ifndef LOGGER_ID
-#error "LOGGER_ID not defined in board header"
+#error "LOGGER_ID not defined"
 #endif
 
 // debugging macros
