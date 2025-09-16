@@ -16,35 +16,40 @@ Simple diagrams of the wiring created using the software [Fritzing](https://frit
 
 First, install the [Arduino IDE](https://www.arduino.cc/en/software) and start it.
 
-For Ubuntu, access to the serial port has to be granted by typing this in the terminal: `sudo adduser $USER dialout`. Then log out and in again.
-
 Next, board support has to be installed by clicking on File -> Preferences and pasting the necessary JSON file URLs (separated by comma) into the text field at "Additional Boards Manager URLs". Then go to Tools -> Boards Manager, and intall the following:
 
 - [SODAQ Autonomo](https://support.sodaq.com/getting_started/): `http://downloads.sodaq.net/package_sodaq_samd_index.json`, provides *SODAQ SAMD Boards*
 - [Adafruit Adalogger](https://learn.adafruit.com/adafruit-feather-m0-adalogger/setup): `https://adafruit.github.io/arduino-board-index/package_adafruit_index.json`, provides *Adafruit SAMD Boards*
 
+#### Ubuntu Linux
+
+For Ubuntu, access to the serial port has to be granted by typing this in the terminal: `sudo adduser $USER dialout`. Then log out and in again.
+
 ### Arduino libraries
 
 A few libraries are needed (Tools -> Library Manager):
 
-- *SdFat* by Bill Greimann (tested with version 2.1.2)
-- *RTClib* by Adafruit (2.0.2)
+- *SdFat* by Bill Greimann (tested with versions 2.3.0)
+- *RTClib* by Adafruit (2.1.4)
 - *Arduino Low Power* by Arduino LLC (1.2.2)
-- [*SDI-12*](https://github.com/EnviroDIY/Arduino-SDI-12) by Sara Damiano (2.1.4)
+- [*SDI-12*](https://github.com/EnviroDIY/Arduino-SDI-12) by Kevin Smith et al. (2.3.0)
 
 ### Preparation
 
-Open `datalogger/datalogger.ino` in the Arduino IDE. Select the correct board at Tools -> Boards
+- Open `datalogger/datalogger.ino` in the Arduino IDE. Select the correct board at *Tools -> Boards -> \<board name\>*. There are separate header files named after the boards, which include all the pin settings. If you have a different board or pin wiring, you need to adjust the code and add your own header file with the correct settings.
+- **Configuration:** Adjust the variables in "User settings" section if necessary
+- At a minimum, give your sensor/logger combo an unique name by setting the **LOGGER_ID**. This name is prepended to all output files and helps to avoid confusion when copying them all to your computer
+- Make sure that `DEBUG` is `false` if uploading the final program for autonomous operation (the default is `DEBUG true`, which is useful for setting things up)
 
-For each board a separate header file was created, wich can then easily be included with all settings such as pin numbers (depending on the wiring), the logger ID.
+#### Configuration
 
-The logger is configured to do instantaneous measurements every 10 seconds using the `R4!` command (see [Integrator Guide](http://publications.metergroup.com/Integrator%20Guide/18195%20ATMOS%2022%20Integrator%20Guide.pdf)). The measurement interval can easily be changed in the *User Settings* section. Switching to averaged / maximum values (`R3!` command) requires replacing `sensor.measureR4(logLine)` with `sensor.measureR3(logLine)` in `datalogger.ino`. Other commands will have to be implemented first (in `Sensor.h` / `Sensor.cpp`).
+The logger is configured to do *instantaneous measurements every 10 seconds* using the `R4!` command (see [Integrator Guide](http://publications.metergroup.com/Integrator%20Guide/18195%20ATMOS%2022%20Integrator%20Guide.pdf)). The measurement interval can easily be changed in the *User Settings* section. Switching to averaged / maximum values (`R3!` command) requires replacing `sensor.measureR4(logLine)` with `sensor.measureR3(logLine)` in `datalogger.ino`. Other commands will have to be implemented first (in `Sensor.h` / `Sensor.cpp`).
 
 ### Uploading the program to the logger
 
-Connect the logger board to the computer using a mini-USB cable. For the the boards to be ready under Ubuntu 20.04, it was usually reqired to double tap the reset button. Make sure that the device is present under Tools -> Port, otherwise double tap the reset button another time. `Ctrl + U` will upload the program.
+Connect the logger board to the computer using a mini-USB cable. For the the boards to be ready under Ubuntu 20.04, it was usually reqired to double tap the reset button. Make sure that the device is present under *Tools -> Port*, otherwise double tap the reset button another time. `Ctrl + U` will upload the program.
 
-Uncommenting the line `//#define DEBUG` (removing `//`) before the upload will allow following the progress of the logger in the serial console (Tools -> Serial Monitor) while still connected by the USB cable. This mode will also allow setting the time of the RTC and formatting the SD cards if necessary. However, for regular operation, the program should again be uploaded with DEBUG disabled.
+If `DEBUG` is set to `true` (the default) before the upload, the progress of the logger operation can be monitored in the serial console (Tools -> Serial Monitor) while still connected by the USB cable. This mode also allows setting the time of the RTC and formatting the SD card if necessary. For regular operation, the program should again be uploaded with DEBUG disabled.
 
 ## Preparing the SD cards
 
@@ -57,6 +62,8 @@ sudo mkdosfs -F 16 /dev/sdb1
 Alternatively, the logger is able to detect problematic formatting and format the SD card when in debug mode (see above).
 
 ## Logger operation
+
+Make sure to upload the program with `DEBUG` set to `false`.
 
 - Startup is indicated by the LED blinking 10x. The SD card must be present. The LED will also light up during wind measurement (which takes a bit less than a second).
 
