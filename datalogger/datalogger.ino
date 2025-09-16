@@ -150,7 +150,7 @@ volatile sdState sdPresence = unknown;
 #endif
 
 // Buffers for time stamp and logger output
-char TimeStamp[] = "0000-00-00 00:00:00";
+char TimeStamp[] = "0000-00-00T00:00:00Z";
 String logLine = "";
 
 // Error code
