@@ -161,7 +161,8 @@ uint8_t errorNo = 0;
 // --------------------------------------------
 
 void updateTimeStamp(DateTime t) {
-  sprintf(TimeStamp, "%d-%02d-%02d %02d:%02d:%02d", t.year(), t.month(),
+  // write timestamp in ISO 8601 (https://en.wikipedia.org/wiki/ISO_8601)
+  sprintf(TimeStamp, "%d-%02d-%02dT%02d:%02d:%02dZ", t.year(), t.month(),
           t.day(), t.hour(), t.minute(), t.second());
 }
 
