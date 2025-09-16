@@ -1,57 +1,55 @@
+// include libraries
 #include "Arduino.h"
 #include "RTClib.h"
 #include "SDI12.h"
 #include "SdFat.h"
+
+// Different boards have different names for the USB serial
+#define Serial SERIAL_PORT_MONITOR
+
+// include our own header files
 #include "SdLogger.h"
 #include "Sensor.h"
 #include "system.h"
 
 // --------------------------------------------
-// 1. Include header for board
+// 1. Choose the right board
 // --------------------------------------------
-// Every of the loggers has a different header file,
-// which can be included by uncommenting when flashing.
-
-#include "s1_Autonomo.h"  // Tools -> Board -> Sodaq Autonomo
-//#include "s2_Feather.h" // Tools -> Board -> Adafruit Feather M0
-
-// The headers define the following variables:
-// LOGGER_ID: ID (name) of the logger, will be prepended to output file names
-// RTC_INTERRUPT_PIN: Pin for RTC interrupt
-// BUTTON_PIN: Pin for the control button
-// SD_CARD_DETECT_PIN (optional): Pin signalling if the SD card was inserted/removed
-// SDCARD_PIN: Pin for communicating with the SD reader (chip select / CS pin)
-// LED_PIN: Pin of a diagnostic LED
-// ERROR_LED_PIN: Pin of LED used for emitting error codes
-// SDI12_PIN: The pin of the SDI-12 data bus
-//
-// In addition, the following function needs to be defined for getting
-// battery voltage in mV (if available).
-// float GetBatteryVoltageMV();
-//
-// Note that you need to install board support:
-// - https://support.sodaq.com/getting_started/
-// - https://learn.adafruit.com/adafruit-feather-m0-adalogger/setup
-// ... and switch the board in Tools -> Board before flashing
-
-#ifndef LOGGER_ID
-#error "LOGGER_ID not defined in board header"
-#endif
+// You need to install board support:
+// - Sodaq Autonomo: https://support.sodaq.com/getting_started/
+// - Adafruit Feather M0: https://learn.adafruit.com/adafruit-feather-m0-adalogger/setup
+// Then choose the board that you connected with USB
+// - Tools -> Board -> Sodaq Autonomo
+// OR
+// - Tools -> Board -> Adafruit Feather M0
+// Further settings (pin numbers, etc.) are found in header files named after the board,
+// which are automatically included (see below)
 
 // --------------------------------------------
 // 2. User settings
 // --------------------------------------------
 
-// uncomment if messages should be printed and/or date-time should be set
-//#define DEBUG
+// Name of the logger, will be prepended to output file names on the SD card
+// NOTE: it is adivable to give your sensor (with its attached logger) an unique
+//   name to avoid confusion after copying the files to your computer!!!
+#define LOGGER_ID "sensor_1"
+
+// Debug mode: activate with true or 1, deactivate with false or 0
+// Used for:
+// - debugging (device activity logged to the serial console)
+// - adjusting the RTC date and time
+// - formatting the SD card with FAT16
+// NOTE: the logger will only work autonomously (not attached to computer)
+//    setting DEBUG to false
+#define DEBUG true
 
 // Name of the output directory
 #define BASE_DIR "atmos22"
 
 // Defines how many bytes should be logged to RAM before
 // writing to the SD card. Higher numbers will lead to lower
-// energy consumption, but in case of power loss, more data
-// will be lost. 
+// energy consumption (less frequent writes to SD card),
+// but in case of power loss, more data will be lost. 
 // Also make sure that there is enough RAM. Memory is reported
 // in debug mode.
 #define BUFFER_SIZE 16384
@@ -80,14 +78,23 @@ x_orientation\ty_orientation\tbattery_voltage\tboard_temperature\n"
 #define SERIAL_BAUD 9600
 
 // --------------------------------------------
-// 3. Serial and debugging
+// 3. Set up board and debugging
 // --------------------------------------------
 
-// Different boards name the USB serial differently
-#define Serial SERIAL_PORT_MONITOR
+#if defined(ARDUINO_SODAQ_AUTONOMO)
+  #include "SodaqAutonomo.h"
+#elif defined(ADAFRUIT_FEATHER_M0)
+  #include "FeatherM0.h"  
+#else
+  #error Unsupported board
+#endif
+
+#ifndef LOGGER_ID
+#error "LOGGER_ID not defined in board header"
+#endif
 
 // debugging macros
-#ifdef DEBUG
+#if DEBUG
 
 bool debugMode = true;
 #define PRINT(...) Serial.print(__VA_ARGS__)
@@ -215,7 +222,7 @@ bool getAnswer(bool defaultYes) {
 // --------------------------------------------
 
 void setup() {
-#ifdef DEBUG
+#if DEBUG
   Serial.begin(9600);
   while (!Serial)
     ;
@@ -280,7 +287,7 @@ bool setupClock() {
   rtc.writeSqwPinMode(DS3231_OFF);
   rtc.disableAlarm(2);
 
-#ifdef DEBUG
+#if DEBUG
   while (Serial.read() != -1);
   updateTimeStamp(rtc.now());
   Serial.print(F("Time is: "));
@@ -329,7 +336,7 @@ bool setupSD() {
   while (true) {
     uint8_t res = initSD();
     if (res != 0) {
-#ifdef DEBUG
+#if DEBUG
       if (res == 1) {
         Serial.println(F("Should the card be reformatted? (y/n) [default: n]"));
         if (getAnswer(false)) {

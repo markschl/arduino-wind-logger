@@ -19,8 +19,8 @@ int freeMemory() {
 // hangs
 inline void standby(bool detachSerial = false, uint32_t serialBaudRate = 9600) {
   if (detachSerial) {
-    SerialUSB.flush();
-    SerialUSB.end();
+    Serial.flush();
+    Serial.end();
     USBDevice.detach();
   }
 
@@ -29,8 +29,8 @@ inline void standby(bool detachSerial = false, uint32_t serialBaudRate = 9600) {
 
   if (detachSerial) {
     USBDevice.attach();
-    SerialUSB.begin(serialBaudRate);
-    while (!SerialUSB);
+    Serial.begin(serialBaudRate);
+    while (!Serial);
   }
 }
 
